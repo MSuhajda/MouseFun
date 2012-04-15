@@ -1,0 +1,18 @@
+MouseFun
+________
+
+This is an experiment with NodeJS and Socket.io.
+
+It is not a real game, not yet at least. You see other connected players' cursor in real-time, you can move it around that's all!
+
+Required modules:
+  - NodeJS
+  - Socket.io (latest)
+
+
+To run, edit the .html file and change socket.connect() to your server's IP address and port.
+To edit the port, change line 53 on server.js.
+
+
+Note:
+	Only 1 connection/IP is allowed. You can disable that in server.js if you wish.
