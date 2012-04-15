@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+  <head>
+    <title>MouseFun - version 1.3 final</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script> <!-- jquery -->
+    <script src="socket.io/socket.io.js"></script> <!-- sockets -->
+  </head>
+  <body> 
+
+<script>
+
+// function for generating a random color - feel free to add more colors
+function randc(){
+    colors = new Array('#FF0000','#00FF00','#0000FF','#00FFFF','#FF00FF','#C0C0C0');
+    var color = colors[Math.floor(Math.random()*colors.length)]
+    return color;
+}
+
+// function for drawing dots on the screen
+function message(objr){
+	if(objr.message) {
+    	var data = objr.message[1].split(':');
+    	var x = data[0];
+    	var y = data[1];
+    	var userid = objr.message[0];
+    	
+    	// if it is not your mouse, draw it on the screen
+    	if($('#mouse_'+userid).length == 0 && userid != 'you') {
+    	    var randcolor = randc();
+     	   $('body').append('<div class="dot" style="background-color:'+randcolor+'" id="mouse_'+userid+'"/>');
+   		 }
+	
+    	// this actually moves dots
+    	if (userid != 'you'){
+    	    $('#mouse_'+userid).css({
+    	    'left' : x + 'px',
+    	    'top' : y + 'px'
+        })
+    	}
+    }
+    else if (objr.connectVar) {
+    	var userid = objr.connectVar[1];
+        var username = objr.connectVar[0];
+    	var connectionDiv = document.getElementById('connectionDiv');
+    	connectionDiv.innerHTML = username + ' connected';
+    	connectionDiv.style.display = 'block';
+    }
+    else if (objr.disconnectVar) {
+    	var userid = objr.disconnectVar[1];
+    	var username = objr.disconnectVar[0];
+		var connectionDiv = document.getElementById('connectionDiv');
+		connectionDiv.innerHTML = username + ' disconnected';
+		connectionDiv.style.display = 'block';
+    	var userMouse = document.getElementById('mouse_'+userid);
+    	document.body.removeChild(userMouse);
+    }
+    else if (objr.buffer && objr.players) {
+    	var buffers = objr.buffer;
+    	var players = objr.players;
+    	for (var i=0; i<objr.players.length; i++) {
+    		var data = buffers[players[i]].message[1].split(':');
+    		var x = data[0];
+    		var y = data[1];
+    		var userid = buffers[players[i]].message[0];
+    		if($('#mouse_'+userid).length == 0 && userid != 'you') {
+    			var randcolor = randc();
+    			$('body').append('<div class="dot" style="background-color:'+randcolor+'" id="mouse_'+userid+'"/>');
+    			var userMouse = document.getElementById('mouse_'+userid);
+    			userMouse.style.top = y + 'px';
+    			userMouse.style.left = x + 'px';
+    		}
+       	}
+    }
+    else if (objr.numberOfPlayers) {
+    	var numberOfPlayers = objr.numberOfPlayers;
+    	var numberDiv = document.getElementById('connectedPlayers');
+    	numberDiv.innerHTML = 'Connected players: ' + numberOfPlayers;
+    }
+}
+
+// When a mouse is moved
+window.onmousemove = function(event){
+    socket.json.send(event.clientX+':'+event.clientY);
+ };
+
+// establish the socket connection
+var socket = io.connect('http://0.0.0.0:8080');
+
+// when the connection is done
+socket.on('connect', function(){
+	// call the server-side function 'adduser' and send one parameter (value of prompt)
+	socket.emit('adduser', prompt("What's your desired username?"));
+});
+
+// on a message from the server
+socket.on('message', function(objr){
+    message(objr);
+});
+</script>
+<style>
+    .dot { height: 10px; width: 10px; background-color:#000000;position:absolute;left:0;top:0;}
+</style>
+<div id='connectedPlayers'>Connected players: 1</div>
+<div id='connectionDiv' style='display:none'></div>
+
+
+</body>
+</html>
